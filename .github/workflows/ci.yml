@@ -1,0 +1,44 @@
+name: CI - build and push to ECR
+on:
+  push:
+    branches: [ gitops ]                 # hint: gitops
+    paths-ignore: [ 'helm/**' ]        # avoid a loop when we commit values.yaml back
+
+permissions:
+  contents: write                    # lets the workflow push the values.yaml update
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: 222634382766.dkr.ecr.us-east-1.amazonaws.com/hello-world-app
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}          # hint: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}      # hint: AWS_SECRET_ACCESS_KEY
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+
+      - name: Build and push image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}                      # first 7 chars of the commit SHA
+          docker build -t $ECR_REPO:$IMAGE_TAG ./app
+          docker push $ECR_REPO:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Update Helm values with new tag
+        run: |
+          sed -i "s|tag:.*|tag: \"$IMAGE_TAG\"|" helm/hello-world/values.yaml
+          git config user.name  "github-actions"
+          git config user.email "actions@github.com"
+          git add helm/hello-world/values.yaml
+          git commit -m "ci: update image tag to $IMAGE_TAG"
+          git push
