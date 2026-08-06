@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: "222634382766.dkr.ecr.us-east-1.amazonaws.com/hello-world-app"          # hint: your ECR repo URL (no tag), e.g. 2226...amazonaws.com/hello-world-app
-  tag: "v1"                 # hint: v1
+  tag: "05d4ab8"
   pullPolicy: IfNotPresent
 
 service:
