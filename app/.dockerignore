@@ -1,0 +1,4 @@
+.gitignore
+venv
+.git
+__paycache__

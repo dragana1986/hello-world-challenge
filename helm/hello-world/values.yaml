@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: "222634382766.dkr.ecr.us-east-1.amazonaws.com/hello-world-app"          # hint: your ECR repo URL (no tag), e.g. 2226...amazonaws.com/hello-world-app
+  tag: "v1"                 # hint: v1
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80                    # the Service's port (what clients hit)
+  targetPort: 8080            # the container's port (gunicorn)
+
+resources:                    # needed for HPA later — do not skip
+  requests:
+    cpu: 100m                 # 0.1 vCPU — the baseline HPA measures against
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 12          # brief: up to 3 pods/node × 4 nodes
+  targetCPU: 50            # scale at 50% CPU
+  targetMemory: 50         # scale at 50% memory

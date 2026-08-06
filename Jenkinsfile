@@ -1,0 +1,42 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = 'us-east-1'
+    ECR_REPO   = '222634382766.dkr.ecr.us-east-1.amazonaws.com/hello-world-app'
+    CLUSTER    = 'hello-world-cluster'
+    IMAGE_TAG  = "v${BUILD_NUMBER}"        // unique tag per build, e.g. v1, v2...
+  }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }               // pulls the repo Jenkins is configured with
+    }
+
+    stage('Build image') {
+      steps {
+        sh 'docker build -t $ECR_REPO:$IMAGE_TAG ./app'   // hint: the app folder
+      }
+    }
+
+    stage('Push to ECR') {
+      steps {
+        sh '''
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+          docker push $ECR_REPO:$IMAGE_TAG                      // hint: IMAGE_TAG
+        '''
+      }
+    }
+
+    stage('Deploy to EKS') {
+      steps {
+        sh '''
+          aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER
+          helm upgrade --install hello-world ./helm/hello-world \
+            --set image.repository=$ECR_REPO \
+            --set image.tag=$IMAGE_TAG                           // hint: IMAGE_TAG
+        '''
+      }
+    }
+  }
+}
