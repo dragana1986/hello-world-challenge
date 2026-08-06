@@ -5,9 +5,12 @@ pipeline {
     AWS_REGION = 'us-east-1'
     ECR_REPO   = '222634382766.dkr.ecr.us-east-1.amazonaws.com/hello-world-app'
     CLUSTER    = 'hello-world-cluster'
-    IMAGE_TAG  = "v${BUILD_NUMBER}"        // unique tag per build, e.g. v1, v2...
+    IMAGE_TAG  = "v${BUILD_NUMBER}"
+    HOME                        = '/var/jenkins_home'          // add
+    AWS_SHARED_CREDENTIALS_FILE = '/var/jenkins_home/.aws/credentials'   // add
+    AWS_CONFIG_FILE             = '/var/jenkins_home/.aws/config'        // add
   }
-
+  
   stages {
     stage('Checkout') {
       steps { checkout scm }               // pulls the repo Jenkins is configured with
